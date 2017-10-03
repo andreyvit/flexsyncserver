@@ -68,6 +68,9 @@ func (srv *Server) handleEnumerateGlob(w http.ResponseWriter, r *http.Request, d
 		includeHash = true
 	} else if value == "body" {
 		includeBody = true
+	} else if value == "hash,body" {
+		includeHash = true
+		includeBody = true
 	} else if value == "none" || value == "" {
 		// nop
 	} else {
@@ -130,13 +133,23 @@ func (srv *Server) handleEnumerateGlob(w http.ResponseWriter, r *http.Request, d
 				return &StatusError{http.StatusInternalServerError, "internal I/O error", err, "ReadFile failed"}
 			}
 
-			if includeBody {
-				data = bytes.Replace(data, []byte("\n"), []byte("\n  "), -1)
-				buf.Write(data)
-			} else {
+			if includeHash && includeHash {
+				buf.WriteString("[")
+			}
+			if includeHash {
 				buf.WriteString("\"")
 				buf.WriteString(Hash(data))
 				buf.WriteString("\"")
+			}
+			if includeHash && includeHash {
+				buf.WriteString(",")
+			}
+			if includeBody {
+				data = bytes.Replace(data, []byte("\n"), []byte("\n  "), -1)
+				buf.Write(data)
+			}
+			if includeHash && includeHash {
+				buf.WriteString("]")
 			}
 		}
 	}
