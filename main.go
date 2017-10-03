@@ -291,7 +291,7 @@ func ParseETag(etag string) (string, bool) {
 	if strings.HasPrefix(etag, "\"") && strings.HasSuffix(etag, "\"") {
 		etag = etag[1 : len(etag)-1]
 		if strings.IndexFunc(etag, isBadHashChar) == -1 {
-			return etag, true
+			return strings.ToLower(etag), true
 		}
 	}
 	return "", false
