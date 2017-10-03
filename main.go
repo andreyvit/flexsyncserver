@@ -2,7 +2,8 @@ package main
 
 import (
 	"bytes"
-	"crypto/sha1"
+	// "crypto/sha1"
+	"crypto/md5"
 	"errors"
 	"flag"
 	"fmt"
@@ -273,7 +274,8 @@ func (e *StatusError) Error() string {
 
 func Hash(data []byte) string {
 	// raw := sha256.Sum256(data)
-	raw := sha1.Sum(data)
+	// raw := sha1.Sum(data)
+	raw := md5.Sum(data)
 	return fmt.Sprintf("%x", raw)
 }
 
