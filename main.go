@@ -18,6 +18,10 @@ import (
 	"sync"
 )
 
+const (
+	missingObjectHash = "00000000000000000000000000000000"
+)
+
 func main() {
 	log.SetOutput(os.Stderr)
 	log.SetFlags(log.Ltime)
@@ -201,19 +205,23 @@ func (srv *Server) handleWrite(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if condHash != "" {
+		var oldHash string
+
 		old, err := ioutil.ReadFile(fn)
 		if err != nil {
 			if os.IsNotExist(err) {
-				return &StatusError{http.StatusNotFound, "not found", err, ""}
+				oldHash = missingObjectHash
+				// return &StatusError{http.StatusNotFound, "not found", err, ""}
 			} else {
 				return &StatusError{http.StatusInternalServerError, "internal I/O error", err, "ReadFile failed"}
 			}
+		} else {
+			oldHash = Hash(old)
 		}
 
-		oldHash := Hash(old)
 		if condHash != oldHash {
 			// log.Printf("%s: conflict: requested %q != actual %q", fn, condHash, oldHash)
-			http.Error(w, "conflict", http.StatusPreconditionFailed)
+			http.Error(w, fmt.Sprintf("conflict %v %v", oldHash, condHash), http.StatusPreconditionFailed)
 			return nil
 		}
 	}
