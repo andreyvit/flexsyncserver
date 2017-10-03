@@ -50,6 +50,13 @@ func (srv *Server) Resolve(fn string) string {
 	return path.Join(srv.rootDir, fn)
 }
 
+func (srv *Server) ResolveVersion(fn string, ver int) string {
+	ext := path.Ext(fn)
+	base := fn[:len(fn)-len(ext)]
+
+	return path.Join(srv.rootDir, "_versions", fmt.Sprintf("%s.v%05d%s", base, ver, ext))
+}
+
 func (srv *Server) handleEnumerate(w http.ResponseWriter, r *http.Request) error {
 	glob := r.FormValue("glob")
 	if glob == "" {
@@ -242,6 +249,26 @@ func (srv *Server) handleWrite(w http.ResponseWriter, r *http.Request) error {
 	err = ioutil.WriteFile(fn, body, 0644)
 	if err != nil {
 		return &StatusError{http.StatusInternalServerError, "internal I/O error", err, "WriteFile failed"}
+	}
+
+	if true {
+		for ver := 1; ; ver++ {
+			fn = srv.ResolveVersion(r.URL.Path, ver)
+			err = os.MkdirAll(path.Dir(fn), 0755)
+			if err != nil {
+				return &StatusError{http.StatusInternalServerError, "internal I/O error", err, "MkdirAll failed (writing version)"}
+			}
+
+			if _, err := os.Stat(fn); err == nil {
+				continue
+			}
+
+			err = ioutil.WriteFile(fn, body, 0644)
+			if err != nil {
+				return &StatusError{http.StatusInternalServerError, "internal I/O error", err, "WriteFile failed (writing version)"}
+			}
+			break
+		}
 	}
 
 	http.Error(w, hash, http.StatusOK)
