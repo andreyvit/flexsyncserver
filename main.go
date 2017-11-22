@@ -291,6 +291,23 @@ func (srv *Server) handleWrite(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func (srv *Server) handleDelete(w http.ResponseWriter, r *http.Request) error {
+	fn := srv.Resolve(r.URL.Path)
+	if fn == "" {
+		return &StatusError{http.StatusBadRequest, "invalid path", nil, ""}
+	}
+
+	srv.mut.Lock()
+	defer srv.mut.Unlock()
+
+	err := os.RemoveAll(fn)
+	if err != nil {
+		return &StatusError{http.StatusInternalServerError, "internal I/O error", err, "RemoveAll failed"}
+	}
+
+	return nil
+}
+
 func (srv *Server) HandleObject(w http.ResponseWriter, r *http.Request) {
 	var err error
 
@@ -311,6 +328,8 @@ func (srv *Server) HandleObject(w http.ResponseWriter, r *http.Request) {
 		}
 	} else if r.Method == http.MethodPut || r.Method == http.MethodPost {
 		err = srv.handleWrite(w, r)
+	} else if r.Method == http.MethodDelete {
+		err = srv.handleDelete(w, r)
 	}
 
 	if err != nil {
