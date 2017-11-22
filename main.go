@@ -47,6 +47,9 @@ type Server struct {
 }
 
 func (srv *Server) Resolve(fn string) string {
+	if strings.Contains(fn, "..") {
+		return ""
+	}
 	return path.Join(srv.rootDir, fn)
 }
 
@@ -88,6 +91,9 @@ func (srv *Server) handleEnumerateGlob(w http.ResponseWriter, r *http.Request, d
 	isMap := includeKey && (includeHash || includeBody)
 
 	dirname = srv.Resolve(dirname)
+	if dirname == "" {
+		return &StatusError{http.StatusBadRequest, "invalid path", nil, ""}
+	}
 
 	srv.mut.Lock()
 	defer srv.mut.Unlock()
@@ -178,6 +184,9 @@ func (srv *Server) handleRead(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	fn := srv.Resolve(r.URL.Path)
+	if fn == "" {
+		return &StatusError{http.StatusBadRequest, "invalid path", nil, ""}
+	}
 
 	srv.mut.Lock()
 	defer srv.mut.Unlock()
@@ -209,6 +218,10 @@ func (srv *Server) handleWrite(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	fn := srv.Resolve(r.URL.Path)
+	if fn == "" {
+		return &StatusError{http.StatusBadRequest, "invalid path", nil, ""}
+	}
+
 	err = os.MkdirAll(path.Dir(fn), 0755)
 	if err != nil {
 		return &StatusError{http.StatusInternalServerError, "internal I/O error", err, "MkdirAll failed"}
@@ -254,6 +267,9 @@ func (srv *Server) handleWrite(w http.ResponseWriter, r *http.Request) error {
 	if true {
 		for ver := 1; ; ver++ {
 			fn = srv.ResolveVersion(r.URL.Path, ver)
+			if fn == "" {
+				return &StatusError{http.StatusBadRequest, "invalid path", nil, ""}
+			}
 			err = os.MkdirAll(path.Dir(fn), 0755)
 			if err != nil {
 				return &StatusError{http.StatusInternalServerError, "internal I/O error", err, "MkdirAll failed (writing version)"}
