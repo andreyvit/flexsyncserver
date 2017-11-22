@@ -330,6 +330,8 @@ func (srv *Server) HandleObject(w http.ResponseWriter, r *http.Request) {
 		err = srv.handleWrite(w, r)
 	} else if r.Method == http.MethodDelete {
 		err = srv.handleDelete(w, r)
+	} else {
+		err = &StatusError{http.StatusMethodNotAllowed, "method not allowed", nil, ""}
 	}
 
 	if err != nil {
